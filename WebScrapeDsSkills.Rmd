@@ -68,7 +68,18 @@ indeedSkills <- function(jobTitle, city, state){
                 state, 
                 sep = "")
   
-  print(url)
+  return(url)
 }
+```
+
+
+Itterate over 3 pages
+```{r}
+itter <- c("", "&start=10", "&start=20", "&start=30")
+itterIndeed <- function(x){
+  for(i in itter):
+  paste()  
+}
+
 ```
 
