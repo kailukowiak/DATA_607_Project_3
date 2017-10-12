@@ -16,6 +16,35 @@ The goal of project 3 is to find key skills for data scientists and put these in
 ### Loading Libraries.
 
 ```{r}
+library(RCurl)
+library(XML)
+library(rvest)
 
+```
+
+Reading the webpage.
+```{r}
+
+
+url <- "https://www.indeed.com/q-data-science-l-New-York-jobs.html"
+ineeedPage <- read_html(url)
+
+ExperienceList <- ineeedPage %>%
+  html_nodes(".experienceList") %>%
+  html_text()
+
+
+TitleName <- ineeedPage %>%
+  html_nodes(".jobtitle") %>%
+  html_text()
+
+
+CompanyName <- ineeedPage %>%
+  html_nodes(".company") %>%
+  html_text()
+
+
+df <- data.frame(ExperienceList, TitleName, CompanyName)
+kable(df)
 ```
 
