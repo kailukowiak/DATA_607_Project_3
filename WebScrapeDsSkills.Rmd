@@ -19,15 +19,15 @@ The goal of project 3 is to find key skills for data scientists and put these in
 library(RCurl)
 library(XML)
 library(rvest)
-
+library(knitr)
 ```
 
-Reading the webpage.
+Proof of Concept:
 ```{r}
+url <- "https://www.indeed.com/jobs?q=data+science&l=New+York" #Test URL
+ineeedPage <- read_html(url) # reading to make a list.
 
-
-url <- "https://www.indeed.com/q-data-science-l-New-York-jobs.html"
-ineeedPage <- read_html(url)
+#Creating columns of the dataframe:
 
 ExperienceList <- ineeedPage %>%
   html_nodes(".experienceList") %>%
@@ -43,8 +43,32 @@ CompanyName <- ineeedPage %>%
   html_nodes(".company") %>%
   html_text()
 
+City <- ineeedPage %>%
+  html_nodes(".location") %>%
+  html_text()
 
-df <- data.frame(ExperienceList, TitleName, CompanyName)
+
+#creating DataFrame
+df <- data.frame(CompanyName,TitleName, City, ExperienceList)
 kable(df)
+```
+
+
+Function to itterate over cities.
+
+```{r}
+# Functions
+
+indeedSkills <- function(jobTitle, city, state){
+  url <- paste0("https://www.indeed.com/jobs?q=",
+                gsub(" ", replacement = "+", jobTitle),
+                "&l=",
+                gsub(" ", replacement = "+", city),
+                "%2C+", 
+                state, 
+                sep = "")
+  
+  print(url)
+}
 ```
 
