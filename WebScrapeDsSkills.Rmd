@@ -1,0 +1,21 @@
+---
+title: "Webscraping to Find Key DS Skills"
+author: "Kai Lukowiak"
+date: '2017-10-12'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Project 3
+
+The goal of project 3 is to find key skills for data scientists and put these into a relational database as well as perform some baisic data analysis.
+
+### Loading Libraries.
+
+```{r}
+
+```
+
