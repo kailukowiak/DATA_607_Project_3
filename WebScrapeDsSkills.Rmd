@@ -20,6 +20,9 @@ library(RCurl)
 library(xml2)
 library(rvest)
 library(knitr)
+library(tidyr)
+library(dplyr)
+library(readr)
 ```
 
 Function to find multiple URLs for all cities:
@@ -142,5 +145,11 @@ library(ggplot2)
   geom_bar(stat = "identity") +
   ggtitle("Percentage of Non- Missing Values") +
   coord_flip() 
+```
+
+```{r}
+
+write_csv(skillTable, "/Users/kailukowiak/Data607Proj3/rankedSkills.csv")
+write_csv(skillTable, "/Users/kailukowiak/Data607Proj3/rawSkills.csv")
 ```
 
