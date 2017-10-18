@@ -17,7 +17,7 @@ The goal of project 3 is to find key skills for data scientists and put these in
 
 ```{r message= FALSE, warning=FALSE}
 library(RCurl)
-library(XML)
+library(xml2)
 library(rvest)
 library(knitr)
 ```
@@ -119,4 +119,28 @@ df <- rbind(nycDF, bostDF, sanFranDF, hustDF, seaDF)
 df %>% kable()
 ```
 
+
+```{r}
+# lapply(df$ExperienceList, function(x) unique(trimws(unlist(strsplit(x, ",")))))
+# 
+# lapply(df$ExperienceList, function(x) sprintf("[%s]", paste(x, collapse = ",")))
+```
+
+```{r}
+
+skillCount <- paste(df$ExperienceList, collapse = ",") 
+skillCount <-  strsplit(skillCount, ",")[[1]]
+skillCount <- gsub(" ", "", skillCount)
+skillTable <-  table(skillCount) %>% as.data.frame()
+```
+
+```{r}
+
+library(ggplot2)
+
+  ggplot(skillTable, aes(x = reorder(skillCount, Freq), y = Freq)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Percentage of Non- Missing Values") +
+  coord_flip() 
+```
 
