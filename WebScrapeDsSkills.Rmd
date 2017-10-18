@@ -24,7 +24,7 @@ library(knitr)
 
 Proof of Concept:
 ```{r}
-url <- "https://www.indeed.com/jobs?q=data+science&l=New+York" #Test URL
+url <- "https://www.indeed.com/jobs?q=Data+Scientist&l=Boston%2C+MA&start=20" #Test URL
 ineeedPage <- read_html(url) # reading to make a list.
 
 #Creating columns of the dataframe:
@@ -32,56 +32,33 @@ ineeedPage <- read_html(url) # reading to make a list.
 ExperienceList <- ineeedPage %>%
   html_nodes(".experienceList") %>%
   html_text()
-
+length(ExperienceList)
 
 TitleName <- ineeedPage %>%
   html_nodes(".jobtitle") %>%
   html_text()
-
+length(TitleName)
 
 CompanyName <- ineeedPage %>%
   html_nodes(".company") %>%
   html_text()
+length(CompanyName)
 
 City <- ineeedPage %>%
   html_nodes(".location") %>%
   html_text()
+length(City)
 
+test <- ineeedPage %>%
+  html_nodes(".result") %>%
+  html_text()
+length(test)
 
-#creating DataFrame
-df <- data.frame(CompanyName,TitleName, City, ExperienceList)
-kable(df)
+# #creating DataFrame
+ dfc <- data.frame(CompanyName,TitleName, City, ExperienceList)
+# kable(df)
 ```
 
-
-Function to itterate over cities.
-
-```{r}
-# Functions
-
-indeedCities <- function(jobTitle, city, state){
-  url <- paste0("https://www.indeed.com/jobs?q=",
-                gsub(" ", replacement = "+", jobTitle),
-                "&l=",
-                gsub(" ", replacement = "+", city),
-                "%2C+", 
-                state, 
-                sep = "")
-  
-  return(url)
-}
-```
-
-
-Itterate over 3 pages
-```{r}
-itter <- c("", "&start=10", "&start=20", "&start=30")
-itterIndeed <- function(x){
-  for(i in itter)
-  print(paste(i))
-}
-
-```
 
 
 Find multiple URLs for all cities:
@@ -89,7 +66,7 @@ Find multiple URLs for all cities:
 ```{r}
 # Functions
 itter <- c("", "&start=10", "&start=20", "&start=30")
-IndeedCities2 <- function(jobTitle, city, state){
+IndeedCities <- function(jobTitle, city, state){
   url <- c() #To make a list with multiple returns.
   for(i in itter){ # create urls
   i <- paste0("https://www.indeed.com/jobs?q=",
@@ -101,7 +78,6 @@ IndeedCities2 <- function(jobTitle, city, state){
                 i,
                 sep = "")
   url <- c(url, i) #Update list of urls
-  print(i) #verifies correct operation. 
   }
   return(url)
 }
@@ -109,18 +85,18 @@ IndeedCities2 <- function(jobTitle, city, state){
 
 
 ```{r}
-nyc <-  IndeedCities2("Data Scientist", "New York", "NY")
-bost <- IndeedCities2("Data Scientist", "Boston", "MA")
-sanFran <- IndeedCities2("Data Scientist", "San Francisco", "CA")
-hust <- IndeedCities2("Data Scientist", "Houston", "TX")
-sea <- IndeedCities2("Data Scientist", "Seattle", "WA")
+nyc <-  IndeedCities("Data Scientist", "New York", "NY")
+bost <- IndeedCities("Data Scientist", "Boston", "MA")
+sanFran <- IndeedCities("Data Scientist", "San Francisco", "CA")
+hust <- IndeedCities("Data Scientist", "Houston", "TX")
+sea <- IndeedCities("Data Scientist", "Seattle", "WA")
 ```
 
 ```{r}
 df1 <- data.frame(CompanyName = as.character(),
-                  TitleName= as.character(),
-                  City= as.character(),
-                  ExperienceList= as.character())
+                  TitleName = as.character(),
+                  City = as.character(),
+                  ExperienceList = as.character())
 url <- "https://www.indeed.com/jobs?q=data+science&l=New+York" #Test URL
 IndeedData <- function(x){
   for(i in c(1:4)){
@@ -132,11 +108,9 @@ IndeedData <- function(x){
       html_nodes(".experienceList") %>%
       html_text()
 
-
     TitleName <- ineeedPage %>%
      html_nodes(".jobtitle") %>%
      html_text()
-
 
     CompanyName <- ineeedPage %>%
       html_nodes(".company") %>%
@@ -145,22 +119,36 @@ IndeedData <- function(x){
     City <- ineeedPage %>%
       html_nodes(".location") %>%
       html_text()
+    # Make a list of all the text in the webpage. 
+    test <- ineeedPage %>%
+      html_nodes(".result") %>%
+      html_text()
+# Make sure that experience is actually included.
+    for(j in 1:length(test)) {
+      if (grepl("Desired Experience:",x = test[j])) {
+        #print(j)
+      } else {
+        ExperienceList <-  append(ExperienceList, NA, after=(i))
+  }
+}
     df <- data.frame(CompanyName,TitleName, City, ExperienceList)
     df1 <- rbind(df1,df)
   }
  return(df1)
 }
 
-#creating DataFrame
-# df <- data.frame(CompanyName,TitleName, City, ExperienceList)
-# kable(df)
 ```
 
 ```{r}
-test <- IndeedData(nyc) 
-kable(test)
+nycDF <- IndeedData(nyc) 
+bostDF <- IndeedData(bost)
+sanFranDF <- IndeedData(sanFran)
+hustDF <- IndeedData(hust)
+seaDF <- IndeedData(sea)
 ```
 
 ```{r}
+df <- rbind(nycDF, bostDF, sanFranDF, hustDF, seaDF)
 ```
+
 
