@@ -151,5 +151,6 @@ library(ggplot2)
 
 write_csv(skillTable, "/Users/kailukowiak/Data607Proj3/rankedSkills.csv")
 write_csv(skillTable, "/Users/kailukowiak/Data607Proj3/rawSkills.csv")
+
 ```
 
