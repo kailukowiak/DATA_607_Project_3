@@ -1,6 +1,6 @@
 ---
 title: "Webscraping to Find Key DS Skills"
-author: "Kai Lukowiak"
+author: "Dream Team"
 date: '2017-10-12'
 output: html_document
 ---
@@ -15,53 +15,14 @@ The goal of project 3 is to find key skills for data scientists and put these in
 
 ### Loading Libraries.
 
-```{r}
+```{r message= FALSE, warning=FALSE}
 library(RCurl)
 library(XML)
 library(rvest)
 library(knitr)
 ```
 
-Proof of Concept:
-```{r}
-url <- "https://www.indeed.com/jobs?q=Data+Scientist&l=Boston%2C+MA&start=20" #Test URL
-ineeedPage <- read_html(url) # reading to make a list.
-
-#Creating columns of the dataframe:
-
-ExperienceList <- ineeedPage %>%
-  html_nodes(".experienceList") %>%
-  html_text()
-length(ExperienceList)
-
-TitleName <- ineeedPage %>%
-  html_nodes(".jobtitle") %>%
-  html_text()
-length(TitleName)
-
-CompanyName <- ineeedPage %>%
-  html_nodes(".company") %>%
-  html_text()
-length(CompanyName)
-
-City <- ineeedPage %>%
-  html_nodes(".location") %>%
-  html_text()
-length(City)
-
-test <- ineeedPage %>%
-  html_nodes(".result") %>%
-  html_text()
-length(test)
-
-# #creating DataFrame
- dfc <- data.frame(CompanyName,TitleName, City, ExperienceList)
-# kable(df)
-```
-
-
-
-Find multiple URLs for all cities:
+Function to find multiple URLs for all cities:
 
 ```{r}
 # Functions
@@ -83,7 +44,7 @@ IndeedCities <- function(jobTitle, city, state){
 }
 ```
 
-
+The cities we will search over. 
 ```{r}
 nyc <-  IndeedCities("Data Scientist", "New York", "NY")
 bost <- IndeedCities("Data Scientist", "Boston", "MA")
@@ -91,6 +52,9 @@ sanFran <- IndeedCities("Data Scientist", "San Francisco", "CA")
 hust <- IndeedCities("Data Scientist", "Houston", "TX")
 sea <- IndeedCities("Data Scientist", "Seattle", "WA")
 ```
+
+
+Function to create the city data.frames
 
 ```{r}
 df1 <- data.frame(CompanyName = as.character(),
@@ -139,6 +103,8 @@ IndeedData <- function(x){
 
 ```
 
+Create the city dfs
+
 ```{r}
 nycDF <- IndeedData(nyc) 
 bostDF <- IndeedData(bost)
@@ -147,8 +113,10 @@ hustDF <- IndeedData(hust)
 seaDF <- IndeedData(sea)
 ```
 
+Create one single df.
 ```{r}
 df <- rbind(nycDF, bostDF, sanFranDF, hustDF, seaDF)
+df %>% kable()
 ```
 
 
