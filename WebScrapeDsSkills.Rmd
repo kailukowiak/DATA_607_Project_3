@@ -134,7 +134,7 @@ skillCount <- gsub(" ", "", skillCount)
 skillTable <-  table(skillCount) %>% as.data.frame()
 ```
 
-```{r}
+```{r fig.width=6, fig.height=9}
 
 library(ggplot2)
 
