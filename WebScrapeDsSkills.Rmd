@@ -23,6 +23,7 @@ library(knitr)
 library(tidyr)
 library(dplyr)
 library(readr)
+library(mongolite)
 ```
 
 Function to find multiple URLs for all cities:
@@ -119,15 +120,10 @@ seaDF <- IndeedData(sea)
 Create one single df.
 ```{r}
 df <- rbind(nycDF, bostDF, sanFranDF, hustDF, seaDF)
-df %>% kable()
+df %>% head() %>% kable()
 ```
 
 
-```{r}
-# lapply(df$ExperienceList, function(x) unique(trimws(unlist(strsplit(x, ",")))))
-# 
-# lapply(df$ExperienceList, function(x) sprintf("[%s]", paste(x, collapse = ",")))
-```
 
 ```{r}
 
@@ -154,3 +150,26 @@ write_csv(skillTable, "/Users/kailukowiak/Data607Proj3/rawSkills.csv")
 
 ```
 
+
+
+Set up mongodb:
+
+```{r}
+
+
+m2 <- mongo(url = "mongodb://127.0.0.1:27017" )
+
+
+jsonlite::stream_out(df, file("skillsDF.json"), verbose = FALSE)
+mt <- mongo("skillsDF")
+mt$import(file("skillsDF.json"))
+mt$find() %>% kable()
+
+```
+
+# Future work
+
+* Find cities highest skill
+* Find city with the most diverse requirements
+* Find city with least requirements
+* K means cluster
