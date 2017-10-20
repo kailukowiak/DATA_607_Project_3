@@ -173,3 +173,34 @@ mt$find() %>% kable()
 * Find city with the most diverse requirements
 * Find city with least requirements
 * K means cluster
+* Try 
+
+
+```{r}
+df %>% 
+  mutate(yesno = 1) %>% 
+  distinct() %>% 
+  spread(Measure.ID, yesno, fill = 0) %>% 
+  glimpse()
+```
+
+```{r}
+# Not
+df %>%
+  mutate(ID = 1:n()) %>%
+  mutate(Combination = strsplit(Combination, split = ",")) %>%
+  unnest() %>%
+  mutate(Value = 1) %>%
+  spread(Combination, Value, fill = 0) %>%
+  select(-ID)
+```
+
+```{r}
+separate(df, ExperienceList, into=paste("V",1:6, sep=""), sep=",") %>%
+    gather(key, value,-lot) %>%
+    filter(!is.na(value)) %>%
+    mutate(yesno = 1) %>%
+    distinct %>%
+    spread(value, yesno, fill = 0) %>% select(-key)
+```
+
