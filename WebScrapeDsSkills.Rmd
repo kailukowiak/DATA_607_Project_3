@@ -120,6 +120,11 @@ seaDF <- IndeedData(sea)
 Create one single df.
 ```{r}
 df <- rbind(nycDF, bostDF, sanFranDF, hustDF, seaDF)
+df$City <- gsub("\\d.*","",df$City)
+df$CompanyName <- gsub("\\n","",df$CompanyName)
+df$TitleName <- gsub("\\n","",df$TitleName)
+#df <- gsub("[\r\n]", "", df)
+#df <- tibble(df)
 df %>% head() %>% kable()
 ```
 
@@ -143,29 +148,21 @@ library(ggplot2)
   coord_flip() 
 ```
 
-```{r}
-
-write_csv(skillTable, "/Users/kailukowiak/Data607Proj3/rankedSkills.csv")
-write_csv(skillTable, "/Users/kailukowiak/Data607Proj3/rawSkills.csv")
-
-```
-
 
 
 Set up mongodb:
 
 ```{r}
-
-
-m2 <- mongo(url = "mongodb://127.0.0.1:27017" )
-
+m <- mongo(url = "mongodb://127.0.0.1:27017" ) # Database ports
 
 jsonlite::stream_out(df, file("skillsDF.json"), verbose = FALSE)
 mt <- mongo("skillsDF")
+#mt$drop(skillsDF)
 mt$import(file("skillsDF.json"))
-mt$find() %>% kable()
+mt$find() %>% head(30) %>% kable()
 
 ```
+
 
 # Future work
 
@@ -176,31 +173,63 @@ mt$find() %>% kable()
 * Try 
 
 
-```{r}
-df %>% 
-  mutate(yesno = 1) %>% 
-  distinct() %>% 
-  spread(Measure.ID, yesno, fill = 0) %>% 
-  glimpse()
-```
 
 ```{r}
+df$ExperienceList <- as.character(df$ExperienceList)
 # Not
-df %>%
+dfKNN <- df %>%
   mutate(ID = 1:n()) %>%
-  mutate(Combination = strsplit(Combination, split = ",")) %>%
+  mutate(ExperienceList = strsplit(ExperienceList, split = ",")) %>%
   unnest() %>%
   mutate(Value = 1) %>%
-  spread(Combination, Value, fill = 0) %>%
-  select(-ID)
+  spread(ExperienceList, Value, fill = 0) 
+```
+
+
+```{r}
+rownames(dfKNN) <- dfKNN$ID
+dfKNN <- select(dfKNN, -ID)
+
+
+dfDum <- dfKNN %>%
+  select(-c(CompanyName, TitleName, City ))
+
+```
+
+
+
+```{r}
+km.out = kmeans(dfDum,5, nstart =20)
+```
+
+
+
+```{r}
+library(dummies)
+test <- dummy( df$CompanyName, sep = ",")
+```
+
+
+K Means cluster 
+```{r}
+clusterDF <- dfKNN[, 1:3]
+clusterDF$Cluster <- km.out$cluster
+clusterDF %>% head() %>% kable()
+```
+
+
+```{r}
+dfKNN %>% 
+  select(-c(CompanyName, TitleName)) %>% 
+  group_by(City) %>% 
+  summarise_all(funs(mean(., na.rm = TRUE))) %>% 
+  kable()
 ```
 
 ```{r}
-separate(df, ExperienceList, into=paste("V",1:6, sep=""), sep=",") %>%
-    gather(key, value,-lot) %>%
-    filter(!is.na(value)) %>%
-    mutate(yesno = 1) %>%
-    distinct %>%
-    spread(value, yesno, fill = 0) %>% select(-key)
+skillCount <- paste(df$ExperienceList, collapse = ",") 
+skillCount <-  strsplit(skillCount, ",")[[1]]
+skillCount <- gsub(" ", "", skillCount)
+skillTable <-  table(skillCount) %>% as.data.frame()
 ```
 

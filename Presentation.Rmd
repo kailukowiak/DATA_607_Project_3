@@ -1,0 +1,186 @@
+---
+title: "Project 3 Presentation"
+author: "Dream Team"
+date: '2017-10-21'
+output:
+  ioslides_presentation:
+    widescreen: true
+    smaller: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r message= FALSE, warning=FALSE}
+library(RCurl)
+library(xml2)
+library(rvest)
+library(knitr)
+library(tidyr)
+library(dplyr)
+library(readr)
+library(mongolite)
+library(ggplot2)
+library(ggthemes)
+library(dummies)
+library(wordcloud2)
+```
+
+```{r}
+m <- mongo(url = "mongodb://127.0.0.1:27017" ) # Database ports
+mt <- mongo("skillsDF")
+if(mt$count() > 0) mt$drop()
+mt$import(file("skillsDF.json"))
+df <- mt$find()
+```
+
+```{r}
+skillCount <- paste(df$ExperienceList, collapse = ",") 
+skillCount <-  strsplit(skillCount, ",")[[1]]
+skillCount <- gsub(" ", "", skillCount)
+skillTable <-  table(skillCount) %>% as.data.frame()
+```
+
+## 
+
+```{r}
+wordTable <- skillTable
+wordTable$Freq <- sqrt(wordTable$Freq) 
+set.seed(212)
+wordcloud2(wordTable, size = .25) # Size must be smaller to avoid ML not showing up.
+
+```
+
+
+
+## Cities
+
+We scraped indeed.com for jobs with the title data scientist in:
+
+* New York
+* Boston
+* San Francisco
+* Houston 
+* Seattle. 
+
+## Data
+```{r}
+
+head(df) %>% kable()
+```
+
+
+## Most valued skills
+
+
+```{r fig.height=5, fig.width=10}
+
+  ggplot(skillTable, aes(x = reorder(skillCount, -Freq), y = Freq)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Required skills") +
+  xlab("Skill") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r}
+# Create KNN matrix
+df$ExperienceList <- as.character(df$ExperienceList)
+df$ExperienceList <- gsub("\\s","", df$ExperienceList) # Removes white space
+dfKNN <- df %>%
+  mutate(ID = 1:n()) %>%
+  mutate(ExperienceList = strsplit(ExperienceList, split = ",")) %>%
+  unnest() %>%
+  mutate(Value = 1) %>%
+  spread(ExperienceList, Value, fill = 0) 
+```
+
+```{r}
+#Rownames
+rownames(dfKNN) <- dfKNN$ID
+dfKNN <- select(dfKNN, -ID)
+
+dfDum <- dfKNN %>%
+  select(-c(CompanyName, TitleName, City ))
+
+```
+
+
+
+```{r}
+km.out = kmeans(dfDum,3, nstart =20) # KNN unsupervized learning. 
+```
+
+
+
+```{r}
+test <- dummy( df$CompanyName, sep = ",")
+```
+
+
+## K Means cluster 
+```{r}
+clusterDF <- dfKNN[, 1:3]
+clusterDF$Cluster <- km.out$cluster
+clusterDF %>% head() %>% kable()
+```
+
+
+```{r}
+dfCity <- dfKNN %>% 
+  select(-c(CompanyName, TitleName)) %>% 
+  group_by(City) %>% 
+  filter(n() > 4) %>% 
+  summarise_all(funs(mean(., na.rm = TRUE)))
+
+dfCityClean <- dfCity %>% mutate(sumVar = rowSums(.[2:ncol(dfCity)])) %>% 
+  select(City, sumVar) %>% 
+  arrange(-sumVar)
+
+```
+
+
+## Diversity of Skills
+```{r}
+ggplot(dfCityClean, aes(x = reorder(City, -sumVar), y = sumVar)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Diversity of Skills") +
+  xlab("City") +
+  ylab("Diversity") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+## Best City for major Skills
+
+```{r}
+vec <- c( "Python", "R", "Hadoop", "Spark", "Java")
+Python <- as.character(dfCity[which.max(dfCity$Python), 1])
+R <- as.character(dfCity[which.max(dfCity$R), 1])
+Hadoop <- as.character(dfCity[which.max(dfCity$Hadoop), 1])
+Spark <- as.character(dfCity[which.max(dfCity$Spark), 1])
+Java <- as.character(dfCity[which.max(dfCity$Java), 1])
+
+BestCity <- as.data.frame(c(Python, R, Hadoop, Spark, Java), row.names = vec)
+
+colnames(BestCity) <- "City"
+BestCity %>% kable()
+```
+
+
+## Areas with the most work
+
+```{r}
+df %>% 
+  group_by(City) %>% 
+  count() %>% 
+  arrange(-n) %>% 
+  ggplot( aes(x = reorder(City, -n), y = n)) + 
+  geom_bar(stat = "identity") +
+  ggtitle("Number of Jobs") +
+  xlab("City") +
+  ylab("Number of Jobs")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
