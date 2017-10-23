@@ -2,7 +2,10 @@
 title: "Webscraping to Find Key DS Skills"
 author: "Dream Team"
 date: '2017-10-12'
-output: html_document
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
 ---
 
 ```{r setup, include=FALSE}
