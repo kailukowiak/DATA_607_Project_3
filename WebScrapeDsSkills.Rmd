@@ -24,12 +24,14 @@ library(tidyr)
 library(dplyr)
 library(readr)
 library(mongolite)
+library(dummies)
+library(ggplot2)
 ```
 
 Function to find multiple URLs for all cities:
 
 ```{r}
-# Functions
+# Function to generate URLS
 itter <- c("", "&start=10", "&start=20", "&start=30")
 IndeedCities <- function(jobTitle, city, state){
   url <- c() #To make a list with multiple returns.
@@ -50,6 +52,7 @@ IndeedCities <- function(jobTitle, city, state){
 
 The cities we will search over. 
 ```{r}
+# This is easier than updating a datafram from a function and using a loop. 
 nyc <-  IndeedCities("Data Scientist", "New York", "NY")
 bost <- IndeedCities("Data Scientist", "Boston", "MA")
 sanFran <- IndeedCities("Data Scientist", "San Francisco", "CA")
@@ -65,7 +68,6 @@ df1 <- data.frame(CompanyName = as.character(),
                   TitleName = as.character(),
                   City = as.character(),
                   ExperienceList = as.character())
-url <- "https://www.indeed.com/jobs?q=data+science&l=New+York" #Test URL
 IndeedData <- function(x){
   for(i in c(1:4)){
     ineeedPage <- read_html(x[i]) # reading to make a list.
@@ -93,10 +95,9 @@ IndeedData <- function(x){
       html_text()
 # Make sure that experience is actually included.
     for(j in 1:length(test)) {
-      if (grepl("Desired Experience:",x = test[j])) {
-        #print(j)
+      if (grepl("Desired Experience:",x = test[j])) { # Double checking to make sure we don't skip NAs
       } else {
-        ExperienceList <-  append(ExperienceList, NA, after=(i))
+        ExperienceList <-  append(ExperienceList, NA, after = (j))
   }
 }
     df <- data.frame(CompanyName,TitleName, City, ExperienceList)
@@ -123,15 +124,15 @@ df <- rbind(nycDF, bostDF, sanFranDF, hustDF, seaDF)
 df$City <- gsub("\\d.*","",df$City)
 df$CompanyName <- gsub("\\n","",df$CompanyName)
 df$TitleName <- gsub("\\n","",df$TitleName)
-#df <- gsub("[\r\n]", "", df)
-#df <- tibble(df)
+df$City <- trimws(df$City) # Removes white space
+df$ExperienceList <- trimws(df$ExperienceList) # Removes white space on either end. 
 df %>% head() %>% kable()
 ```
 
 
 
 ```{r}
-
+# Explained in the presentation rmd.
 skillCount <- paste(df$ExperienceList, collapse = ",") 
 skillCount <-  strsplit(skillCount, ",")[[1]]
 skillCount <- gsub(" ", "", skillCount)
@@ -139,10 +140,7 @@ skillTable <-  table(skillCount) %>% as.data.frame()
 ```
 
 ```{r fig.width=6, fig.height=9}
-
-library(ggplot2)
-
-  ggplot(skillTable, aes(x = reorder(skillCount, Freq), y = Freq)) + 
+ggplot(skillTable, aes(x = reorder(skillCount, Freq), y = Freq)) + 
   geom_bar(stat = "identity") +
   ggtitle("Percentage of Non- Missing Values") +
   coord_flip() 
@@ -153,11 +151,11 @@ library(ggplot2)
 Set up mongodb:
 
 ```{r}
+# SEtting up MongoDB
 m <- mongo(url = "mongodb://127.0.0.1:27017" ) # Database ports
 
 jsonlite::stream_out(df, file("skillsDF.json"), verbose = FALSE)
 mt <- mongo("skillsDF")
-#mt$drop(skillsDF)
 mt$import(file("skillsDF.json"))
 mt$find() %>% head(30) %>% kable()
 
@@ -199,7 +197,7 @@ dfDum <- dfKNN %>%
 
 
 ```{r}
-km.out = kmeans(dfDum,5, nstart =20)
+km.out = kmeans(dfDum,2, nstart =20)
 ```
 
 
@@ -219,17 +217,28 @@ clusterDF %>% head() %>% kable()
 
 
 ```{r}
-dfKNN %>% 
+dfCity <- dfKNN %>% 
   select(-c(CompanyName, TitleName)) %>% 
   group_by(City) %>% 
-  summarise_all(funs(mean(., na.rm = TRUE))) %>% 
-  kable()
+  summarise_all(funs(mean(., na.rm = TRUE)))
+
+dfCityClean <- dfCity %>% mutate(sumVar = rowSums(.[2:ncol(dfCity)])) %>% 
+  select(City, sumVar) %>% 
+  arrange(-sumVar)
+dfCityClean %>% head() %>% kable()
+dfCityClean %>% tail() %>% kable()
+```
+
+The most diverse skills by city.
+```{r}
+dfCityClean <- dfCity %>% mutate(sumVar = rowSums(.[2:ncol(dfCity)])) %>% 
+  select(City, sumVar) %>% 
+  arrange(-sumVar)
+dfCityClean %>% head() %>% kable()
+dfCityClean %>% tail() %>% kable()
 ```
 
 ```{r}
-skillCount <- paste(df$ExperienceList, collapse = ",") 
-skillCount <-  strsplit(skillCount, ",")[[1]]
-skillCount <- gsub(" ", "", skillCount)
-skillTable <-  table(skillCount) %>% as.data.frame()
+trimws(dfKNN$City) %>% unique()
 ```
 
